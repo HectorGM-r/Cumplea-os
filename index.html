@@ -594,7 +594,7 @@
       <button class="back-btn" onclick="showView('cover')">←</button>
       <h2>Momentos</h2>
     </div>
-    <p class="view-sub">Elige cómo te sientes ahora mismo.</p>
+    <p class="view-sub">Elige cómo te sientes ahora mismo. Toca de nuevo la misma emoción (o el botón "Otra nota") para ver otra distinta.</p>
 
     <div id="moodTabs"></div>
 
@@ -713,27 +713,98 @@ const DEFAULT_LETTERS = [
   { id: "carta2", unlockDate: "2026-12-25", title: "Para diciembre", text: "Escribe aquí otra carta. Puedes agregar tantas como quieras, cada una con su propia fecha." },
 ];
 
-const MOODS = ["Feliz","Triste","Enojada","Ansiosa","Con nostalgia"];
+const MOODS = ["Feliz","Triste","Enojada","Ansiosa","Con nostalgia","Emocionada","Agradecida","Cansada","Insegura","Con esperanza","Orgullosa","En paz"];
 const DEFAULT_MOMENTOS = {
   "Feliz": [
     "Guarda este momento. Se puede volver a sentir, y va a volver.",
-    "Deja que se note. La gente que te quiere se alegra de verte así."
+    "Deja que se note. La gente que te quiere se alegra de verte así.",
+    "Sonríe todo lo que quieras, no necesitas ningún motivo especial para hacerlo.",
+    "Este es un buen momento para llamar a alguien que quieres y contarle por qué estás feliz.",
+    "La felicidad simple también cuenta, no hace falta que sea algo grande.",
+    "Disfruta esto sin apuro. No hay que analizarlo, solo vivirlo.",
+    "Que esta alegría te recuerde que mereces sentirte así más seguido."
   ],
   "Triste": [
     "No tienes que arreglarlo ahora mismo. Solo respira y date un poco de tiempo.",
-    "Esto va a pasar. Mientras tanto, está bien no estar bien."
+    "Esto va a pasar. Mientras tanto, está bien no estar bien.",
+    "Llorar no es debilidad, es solo tu cuerpo soltando lo que cargaba.",
+    "No estás sola en esto, aunque ahora lo sientas así.",
+    "Está bien pedir ayuda o compañía cuando algo pesa.",
+    "Sé amable contigo misma hoy, como lo serías con alguien que quieres.",
+    "Mañana no tiene que ser igual a hoy."
   ],
   "Enojada": [
     "Tu enojo tiene una razón, aunque ahora cueste verla con calma.",
-    "Respira hondo tres veces antes de responder a nada. Puede esperar."
+    "Respira hondo tres veces antes de responder a nada. Puede esperar.",
+    "Está bien sentir rabia. Lo que hagas con ella es lo que importa.",
+    "No tienes que decidir nada importante mientras estás así de encendida.",
+    "Dale un rato a tu cuerpo para bajar la intensidad antes de hablar.",
+    "El enojo también te está diciendo qué es lo que te importa."
   ],
   "Ansiosa": [
     "Estás a salvo en este momento, aunque la cabeza diga otra cosa.",
-    "Una cosa a la vez. No hace falta resolver todo hoy."
+    "Una cosa a la vez. No hace falta resolver todo hoy.",
+    "Nombra cinco cosas que puedas ver a tu alrededor, ayuda a bajar el ritmo.",
+    "Lo que estás sintiendo es real, pero no es una predicción del futuro.",
+    "Tu cuerpo está reaccionando, no tienes que creerle todo lo que dice.",
+    "Está bien pausar y volver a esto después, cuando te sientas más tranquila."
   ],
   "Con nostalgia": [
     "Está bien extrañar. Es señal de que algo valió la pena.",
-    "Lo que fue bonito una vez, sigue siendo tuyo para siempre."
+    "Lo que fue bonito una vez, sigue siendo tuyo para siempre.",
+    "Puedes recordarlo con cariño sin que duela tanto como antes.",
+    "Los recuerdos buenos no se van, solo cambian de forma.",
+    "Alguien pensó en construir cosas nuevas contigo, y eso también cuenta.",
+    "Deja que el recuerdo te acompañe un rato, sin apuro por dejarlo ir."
+  ],
+  "Emocionada": [
+    "Deja que esa emoción se sienta completa, no hay que contenerla.",
+    "Algo bueno se está moviendo, y tú lo notaste primero.",
+    "Comparte esto con alguien, la emoción se multiplica cuando se cuenta.",
+    "Guarda este momento en la memoria, de esos que después uno recuerda con una sonrisa.",
+    "Está bien estar así de ilusionada por algo, no necesitas explicarlo."
+  ],
+  "Agradecida": [
+    "Ese agradecimiento que sientes también dice mucho de quién eres.",
+    "Anota esto en algún lado, para poder volver a leerlo en un mal día.",
+    "Decir gracias en voz alta también cuenta como un regalo para el otro.",
+    "La gratitud es una forma silenciosa de estar en paz.",
+    "Está bien sentirte afortunada, no tienes que restarle importancia."
+  ],
+  "Cansada": [
+    "Descansar no hay que ganárselo, a veces solo hace falta.",
+    "Baja el ritmo un rato, lo demás puede esperar.",
+    "No tienes que rendir al cien por ciento todo el tiempo.",
+    "Está bien decir que no puedes hoy, y dejarlo ahí.",
+    "Tu cuerpo te está pidiendo una pausa, no un motivo para justificarla."
+  ],
+  "Insegura": [
+    "No necesitas tenerlo todo resuelto para seguir adelante.",
+    "La duda no significa que estés haciendo algo mal.",
+    "Puedes avanzar despacio y seguir siendo válida en lo que haces.",
+    "Nadie tiene todas las respuestas, ni siquiera quienes parecen seguros.",
+    "Confía un poco en la persona que ya has sido hasta ahora."
+  ],
+  "Con esperanza": [
+    "Está bien creer que algo bueno puede pasar, aunque no sepas cuándo.",
+    "La esperanza no es ingenua, es una forma de seguir intentando.",
+    "Guarda esta sensación, es un buen lugar desde donde seguir caminando.",
+    "Las cosas pueden mejorar, y tú ya estás abriendo camino para eso.",
+    "Aunque no se vea aún, algo se está construyendo."
+  ],
+  "Orgullosa": [
+    "Te lo has ganado, no hace falta minimizarlo.",
+    "Reconocer lo que lograste también es parte de seguir creciendo.",
+    "Está bien sentirte bien contigo misma, no es soberbia, es justicia.",
+    "Guarda este logro como prueba de lo que eres capaz de hacer.",
+    "Nadie más puede sentir este orgullo por ti, disfrútalo."
+  ],
+  "En paz": [
+    "Este momento de calma también merece ser notado, no solo los difíciles.",
+    "No tienes que estar resolviendo algo para que este rato valga.",
+    "Aprovecha esta quietud, no siempre está disponible.",
+    "La paz también se entrena, y hoy la estás consiguiendo.",
+    "Quédate un rato más aquí, sin prisa por que pase algo."
   ]
 };
 const COUPON_TEMPLATES = ["Una cena", "Un día sin planes", "Una llamada larga", "Una tarde de películas", "Un abrazo largo"];
@@ -762,6 +833,7 @@ let audioCtx = null;
 let momentIdCounter = 1;
 let shareWishRef = null;
 let adminUnlocked = false;
+let momentIndexByMood = {};
 
 /* ---------------- storage helpers ---------------- */
 async function loadState(){
@@ -1670,10 +1742,25 @@ function buildMoodTabs(){
   wrap.innerHTML = MOODS.map(m=>`<span class="mood-tab ${m===currentMood?'active':''}" onclick="selectMood('${m}')">${m}</span>`).join('');
 }
 function selectMood(m){
-  currentMood = m;
+  if(m === currentMood){
+    advanceMomentIndex(m);
+  } else {
+    currentMood = m;
+    if(momentIndexByMood[m] === undefined) momentIndexByMood[m] = 0;
+  }
   buildMoodTabs();
   breatheOn = false;
   document.getElementById('breatheCard').style.display = 'none';
+  renderMomentos();
+}
+function advanceMomentIndex(m){
+  const notes = state.momentos[m] || [];
+  if(notes.length===0) return;
+  const cur = momentIndexByMood[m] || 0;
+  momentIndexByMood[m] = (cur + 1) % notes.length;
+}
+function nextMomentNote(){
+  advanceMomentIndex(currentMood);
   renderMomentos();
 }
 function toggleBreathe(){
@@ -1688,16 +1775,23 @@ function renderMomentos(){
   const box = document.getElementById('momentNotes');
   if(notes.length===0){
     box.innerHTML = '<p class="empty-note">Todavía no hay notas para este estado.</p>';
-  } else {
-    box.innerHTML = notes.map(n=>`
-      <div class="moment-note" id="moment-${n.id}">
-        <div id="momentText-${n.id}">${escapeHtml(n.text)}</div>
-        <div class="note-actions">
-          <button class="helpful-btn" onclick="markHelpful('${n.id}', true)">👍 Me ayudó (${n.helpful})</button>
-          <button class="helpful-btn" onclick="markHelpful('${n.id}', false)">👎 No tanto (${n.notHelpful})</button>
-        </div>
-      </div>`).join('');
+    return;
   }
+  if(momentIndexByMood[currentMood] === undefined) momentIndexByMood[currentMood] = 0;
+  const idx = momentIndexByMood[currentMood] % notes.length;
+  const n = notes[idx];
+  box.innerHTML = `
+    <div class="moment-note" id="moment-${n.id}">
+      <div id="momentText-${n.id}">${escapeHtml(n.text)}</div>
+      <div class="note-actions">
+        <button class="helpful-btn" onclick="markHelpful('${n.id}', true)">👍 Me ayudó (${n.helpful})</button>
+        <button class="helpful-btn" onclick="markHelpful('${n.id}', false)">👎 No tanto (${n.notHelpful})</button>
+      </div>
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:.7rem;">
+      <span style="font-size:.75rem; color:var(--ink-dim);">${idx+1} de ${notes.length}</span>
+      <button class="btn secondary small" onclick="nextMomentNote()">Otra nota →</button>
+    </div>`;
 }
 function renderSongBox(){
   const box = document.getElementById('songBox');
