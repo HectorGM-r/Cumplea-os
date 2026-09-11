@@ -699,6 +699,69 @@ const BIRTHDAY_MESSAGE = "Hoy es tu día y quería que lo supieras apenas abrier
 --------------------------------------------------------- */
 const ADMIN_PASSWORD = "Cori65";
 
+/* ---------------------------------------------------------
+   ALMACENAMIENTO: Claude (si corre dentro de Claude) o Firebase
+   Realtime Database (si corre fuera, ej. GitHub Pages).
+   No se necesita tocar nada aquí para cambiar de un lugar a otro:
+   la app detecta sola dónde está corriendo cada vez que guarda o
+   lee algo. Solo existe un nodo abierto en tus reglas ("shared"),
+   así que TODO (lo compartido y lo personal) vive ahí adentro, en
+   subcarpetas distintas: shared/shared_data y shared/personal_data.
+--------------------------------------------------------- */
+const FIREBASE_DB_URL = "https://proyecto-cumple-a5812-default-rtdb.firebaseio.com";
+let _fbStorageSingleton = null;
+function createFirebaseStorage(){
+  function pathFor(key, shared){
+    const bucket = shared ? 'shared_data' : 'personal_data';
+    const safeKey = String(key).replace(/[.#$\[\]/]/g, '_');
+    return `${FIREBASE_DB_URL}/shared/${bucket}/${encodeURIComponent(safeKey)}.json`;
+  }
+  return {
+    async get(key, shared){
+      const res = await fetch(pathFor(key, shared));
+      if(!res.ok) throw new Error('Firebase GET falló: HTTP ' + res.status);
+      const data = await res.json();
+      if(data === null || data === undefined) throw new Error('Clave no encontrada: ' + key);
+      return { key, value: data.value, shared };
+    },
+    async set(key, value, shared){
+      const res = await fetch(pathFor(key, shared), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value, updatedAt: Date.now() })
+      });
+      if(!res.ok) return null;
+      return { key, value, shared };
+    },
+    async delete(key, shared){
+      const res = await fetch(pathFor(key, shared), { method: 'DELETE' });
+      if(!res.ok) return null;
+      return { key, deleted: true, shared };
+    },
+    async list(prefix, shared){
+      const bucket = shared ? 'shared_data' : 'personal_data';
+      const res = await fetch(`${FIREBASE_DB_URL}/shared/${bucket}.json`);
+      if(!res.ok) return { keys: [], prefix, shared };
+      const data = await res.json();
+      let keys = data ? Object.keys(data) : [];
+      if(prefix) keys = keys.filter(k => k.startsWith(prefix));
+      return { keys, prefix, shared };
+    }
+  };
+}
+/* Se decide en cada llamada (no una sola vez al cargar el script) para
+   no depender de en qué momento exacto Claude inyecta window.storage. */
+function getStorage(){
+  if(window.storage && typeof window.storage.get === 'function'){
+    return window.storage;
+  }
+  if(!_fbStorageSingleton){
+    _fbStorageSingleton = createFirebaseStorage();
+    console.log('Usando Firebase Realtime Database como almacenamiento (fuera del entorno de Claude).');
+  }
+  return _fbStorageSingleton;
+}
+
 /* Mensaje que aparece al tocar el botón "Propósito" de la esquina. */
 const PURPOSE_MESSAGE = "Este programa fue hecho durante los acontecimientos del año y medio de separación, se tuvieron bocetos y líneas escritas en las cuales tuve que remasterizar de los anteriores programas que te hice, junto con unas cuantas herramientas que ayudaron con el acabado. El propósito fue para algo mutuo: yo poder entregar algo que tenía guardado por mucho tiempo, y que tú puedas recibir algo auténtico en tu cumpleaños. Pase lo que pase, ya será entregado. Me siento orgulloso de finalizar este proyecto, y que mi yo de hace 1 año pueda estar tranquilo sabiendo que pudo entregar lo que tenía guardado. Disfrútalo.";
 
@@ -840,7 +903,7 @@ async function loadState(){
   const keys = ["coins","usedCodes","wishes","diary","quizItems","quizHistory","moodSongs","cupones","pin","soundOn","readLetters"];
   for(const k of keys){
     try{
-      const r = await window.storage.get("grecia:"+k, false);
+      const r = await getStorage().get("grecia:"+k, false);
       if(r && r.value !== undefined){
         state[k] = JSON.parse(r.value);
       }
@@ -859,28 +922,28 @@ async function loadState(){
    por defecto de arriba. */
 async function loadSharedData(){
   try{
-    const r = await window.storage.get("codes", true);
+    const r = await getStorage().get("codes", true);
     state.sharedCodes = r && r.value !== undefined ? JSON.parse(r.value) : null;
   }catch(e){ state.sharedCodes = null; }
   if(!state.sharedCodes){
     state.sharedCodes = JSON.parse(JSON.stringify(DEFAULT_CODES));
-    try{ await window.storage.set("codes", JSON.stringify(state.sharedCodes), true); }catch(e){}
+    try{ await getStorage().set("codes", JSON.stringify(state.sharedCodes), true); }catch(e){}
   }
   try{
-    const r = await window.storage.get("letters", true);
+    const r = await getStorage().get("letters", true);
     state.sharedLetters = r && r.value !== undefined ? JSON.parse(r.value) : null;
   }catch(e){ state.sharedLetters = null; }
   if(!state.sharedLetters){
     state.sharedLetters = JSON.parse(JSON.stringify(DEFAULT_LETTERS));
-    try{ await window.storage.set("letters", JSON.stringify(state.sharedLetters), true); }catch(e){}
+    try{ await getStorage().set("letters", JSON.stringify(state.sharedLetters), true); }catch(e){}
   }
   try{
-    const r = await window.storage.get("momentos", true);
+    const r = await getStorage().get("momentos", true);
     state.momentos = r && r.value !== undefined ? normalizeMomentos(JSON.parse(r.value)) : null;
   }catch(e){ state.momentos = null; }
   if(!state.momentos){
     state.momentos = normalizeMomentos(JSON.parse(JSON.stringify(DEFAULT_MOMENTOS)));
-    try{ await window.storage.set("momentos", JSON.stringify(state.momentos), true); }catch(e){}
+    try{ await getStorage().set("momentos", JSON.stringify(state.momentos), true); }catch(e){}
   }
 }
 async function saveSharedMomentos(){
@@ -917,10 +980,10 @@ async function saveSharedLetters(){
   return ok;
 }
 async function saveKey(key){
-  const ok = await saveWithRetry(()=>window.storage.set("grecia:"+key, JSON.stringify(state[key]), false));
+  const ok = await saveWithRetry(()=>getStorage().set("grecia:"+key, JSON.stringify(state[key]), false));
   if(!ok){
     showToast('No se pudo guardar todavía. Voy a seguir intentando solo en segundo plano...');
-    queueBackgroundRetry('grecia:'+key, ()=>window.storage.set("grecia:"+key, JSON.stringify(state[key]), false));
+    queueBackgroundRetry('grecia:'+key, ()=>getStorage().set("grecia:"+key, JSON.stringify(state[key]), false));
   }
 }
 async function saveWithRetry(fn, retries=3){
@@ -949,10 +1012,10 @@ async function saveWithRetry(fn, retries=3){
 async function saveSharedWithVerify(key, valueStr, retries=3){
   for(let i=0;i<retries;i++){
     try{
-      const setResult = await window.storage.set(key, valueStr, true);
+      const setResult = await getStorage().set(key, valueStr, true);
       if(setResult){
         try{
-          const check = await window.storage.get(key, true);
+          const check = await getStorage().get(key, true);
           if(check && check.value === valueStr){
             return true;
           }
