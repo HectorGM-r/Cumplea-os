@@ -752,12 +752,9 @@ function createFirebaseStorage(){
 /* Se decide en cada llamada (no una sola vez al cargar el script) para
    no depender de en qué momento exacto Claude inyecta window.storage. */
 function getStorage(){
-  if(window.storage && typeof window.storage.get === 'function'){
-    return window.storage;
-  }
   if(!_fbStorageSingleton){
     _fbStorageSingleton = createFirebaseStorage();
-    console.log('Usando Firebase Realtime Database como almacenamiento (fuera del entorno de Claude).');
+    console.log('Usando Firebase Realtime Database.');
   }
   return _fbStorageSingleton;
 }
@@ -2203,5 +2200,4 @@ function runAppInit(){
 </script>
 </body>
 </html>
-
 
